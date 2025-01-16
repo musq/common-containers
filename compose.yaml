@@ -1,0 +1,91 @@
+services:
+  common_postgres:
+    image: postgres:16
+    # To login to "postgres" database from outside your container, make
+    # sure you have psql command on your machine. Then run:
+    # > psql -h localhost -U postgres
+    # Use "postgres" when prompted for password
+    environment:
+      POSTGRES_PASSWORD: postgres
+    healthcheck:
+      # We provide user and database explicitly because pg_isready
+      # assumes we want to login with our current OS user (inside
+      # container) which is root, and raises below error because there
+      # is no "root" user in Postgres:
+      # FATAL: role "root" does not exist
+      # We could also use PGUSER environment variable instead:
+      # https://stackoverflow.com/a/60194261
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      start_period: 15s
+      interval: 3s
+      timeout: 2s
+      retries: 30
+    ports:
+      - "11310:5432"
+    volumes:
+      - ~/src/docker-volumes/common_postgres:/var/lib/postgresql/data
+      - ./common_postgres/docker-entrypoint-initdb.d/1-create-meta-db.sh:/docker-entrypoint-initdb.d/1-create-meta-db.sh
+
+  common_zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.2
+    environment:
+      - ZOOKEEPER_CLIENT_PORT=11410
+    healthcheck:
+      # https://gabrielschenker.com/index.php/2019/10/01/docker-compose-health-checks/
+      test: nc -z localhost 11410 || exit -1
+      start_period: 15s
+      interval: 3s
+      timeout: 2s
+      retries: 10
+    volumes:
+      - ~/src/docker-volumes/common_zookeeper/data:/var/lib/zookeeper/data
+      - ~/src/docker-volumes/common_zookeeper/log:/var/lib/zookeeper/log
+
+  common-kafka:
+    # Use "localhost:11420" as bootstrap server when connecting from
+    # outside docker network.
+    # References:
+    # - https://gist.github.com/rmoff/fb7c39cc189fc6082a5fbd390ec92b3d
+    # - https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
+    image: confluentinc/cp-kafka:7.7.2
+    depends_on:
+      common_zookeeper:
+        condition: service_healthy
+    environment:
+      - KAFKA_BROKER_ID=1
+      - KAFKA_ZOOKEEPER_CONNECT=common_zookeeper:11410
+      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://common-kafka:9092,EXTERNAL://localhost:11420,INTERNAL_SSL://common-kafka:9094,EXTERNAL_SSL://localhost:11424
+      - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,INTERNAL_SSL:SSL,EXTERNAL_SSL:SSL
+      - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
+      - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_SSL_KEYSTORE_FILENAME=server.keystore.jks
+      - KAFKA_SSL_KEYSTORE_CREDENTIALS=server.keystore.password
+      - KAFKA_SSL_KEY_CREDENTIALS=server.keystore.password
+      # Do not delete logs automatically
+      - KAFKA_LOG_RETENTION_MS=-1
+      - KAFKA_RETENTION_MS=-1
+    healthcheck:
+      # http://java.msk.ru/add-healthchecks-for-apache-kafka-in-docker-compose/
+      test: nc -z localhost 9092 || exit -1
+      start_period: 15s
+      interval: 3s
+      timeout: 2s
+      retries: 10
+    ports:
+      - "11420:11420"
+      - "11424:11424"
+    volumes:
+      - ~/src/docker-volumes/common-kafka/data:/var/lib/kafka/data
+      - ./common-kafka/secrets/server.keystore.jks:/etc/kafka/secrets/server.keystore.jks
+      - ./common-kafka/secrets/server.keystore.password:/etc/kafka/secrets/server.keystore.password
+
+  common_kafdrop:
+    # Webapp to monitor kafka. Visit localhost:11400.
+    image: obsidiandynamics/kafdrop:latest
+    depends_on:
+      common-kafka:
+        condition: service_healthy
+    environment:
+      - KAFKA_BROKERCONNECT=common-kafka:9092
+    ports:
+      - "11400:9000"
