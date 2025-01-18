@@ -89,3 +89,59 @@ services:
       - KAFKA_BROKERCONNECT=common-kafka:9092
     ports:
       - "11400:9000"
+
+  common_loki:
+    image: grafana/loki:latest
+    command: -config.file=/etc/loki/config.yaml
+    healthcheck:
+      # https://community.grafana.com/t/loki-healthcheck-in-docker-compose/117767/4
+      test: wget --quiet --tries=1 --output-document=- http://localhost:3100/ready | grep -q -w ready || exit 1
+      start_period: 20s
+      interval: 3s
+      timeout: 1s
+      retries: 20
+    ports:
+      - "11215:3100"
+    volumes:
+      - ./common_loki/config.yaml:/etc/loki/config.yaml
+      - ~/src/docker-volumes/common_loki/data:/loki
+
+  common_alloy:
+    image: grafana/alloy:latest
+    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    depends_on:
+      common_loki:
+        condition: service_healthy
+    healthcheck:
+      # https://github.com/grafana/alloy/issues/477#issuecomment-2050541417
+      test: "/bin/bash -c 'echo -e \"GET /-/ready HTTP/1.1\\nHost: localhost\\nConnection: close\\n\\n\" > /dev/tcp/localhost/12345'"
+      interval: 1s
+      timeout: 1s
+      retries: 10
+    ports:
+      - "11210:12345" # Alloy server and UI
+      - "11211:4317" # gRPC
+      - "11212:4318" # HTTP
+    volumes:
+      - ./common_alloy/config.alloy:/etc/alloy/config.alloy
+      - ~/src/docker-volumes/common_alloy/data:/var/lib/alloy/data
+
+  common_grafana:
+    image: grafana/grafana:latest
+    environment:
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_BASIC_ENABLED=false
+      - GF_FEATURE_TOGGLES_ENABLE=accessControlOnCall
+      - GF_INSTALL_PLUGINS=https://storage.googleapis.com/integration-artifacts/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip;grafana-lokiexplore-app
+    healthcheck:
+      # https://github.com/grafana/grafana/pull/27536
+      test: wget --quiet --tries=1 --output-document=- http://localhost:3000/healthz | grep -q -w Ok || exit 1
+      interval: 1s
+      timeout: 1s
+      retries: 10
+    ports:
+      - "11200:3000"
+    volumes:
+      - ./common_grafana:/etc/grafana/provisioning
+      - ~/src/docker-volumes/common_grafana/data:/var/lib/grafana
