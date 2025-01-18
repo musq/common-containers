@@ -23,8 +23,8 @@ services:
     ports:
       - "11310:5432"
     volumes:
-      - ~/src/docker-volumes/common_postgres:/var/lib/postgresql/data
       - ./common_postgres/docker-entrypoint-initdb.d/1-create-meta-db.sh:/docker-entrypoint-initdb.d/1-create-meta-db.sh
+      - ~/src/docker-volumes/common_postgres:/var/lib/postgresql/data
 
   common_zookeeper:
     image: confluentinc/cp-zookeeper:7.7.2
@@ -43,7 +43,7 @@ services:
 
   common-kafka:
     # Use "localhost:11420" as bootstrap server when connecting from
-    # outside docker network.
+    # outside the docker network.
     # References:
     # - https://gist.github.com/rmoff/fb7c39cc189fc6082a5fbd390ec92b3d
     # - https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
@@ -75,9 +75,9 @@ services:
       - "11420:11420"
       - "11424:11424"
     volumes:
-      - ~/src/docker-volumes/common-kafka/data:/var/lib/kafka/data
       - ./common-kafka/secrets/server.keystore.jks:/etc/kafka/secrets/server.keystore.jks
       - ./common-kafka/secrets/server.keystore.password:/etc/kafka/secrets/server.keystore.password
+      - ~/src/docker-volumes/common-kafka/data:/var/lib/kafka/data
 
   common_kafdrop:
     # Webapp to monitor kafka. Visit localhost:11400.
