@@ -1,25 +1,137 @@
+///////////////////////////////////////////////////////////////////////////////
+// Meta
 logging {
-  level  = "info"
-  format = "logfmt"
+    level  = "info"
+    format = "logfmt"
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Configuration file
+local.file "endpoints" {
+    // The endpoints file is used to define the endpoints, credentials and options
+    // for the Alloy export to.
+    filename = "/etc/alloy/endpoints.json"
+}
+
+// The OpenTelemetry receiver is used to ingest all incoming logs, metrics, and trace spans.
+// Note that both the instrumented applications and Beyla use the same receiver to send traces.
 otelcol.receiver.otlp "default" {
-  http {}
-  grpc {}
+    // We don't technically need this, but it shows how to change listen address and incoming port.
+    // In this case, the Alloy is listening on all available bindable addresses on port 4317 (which is the
+    // default OTLP gRPC port) for the OTLP protocol.
+    grpc {
+        endpoint = "0.0.0.0:4317"
+    }
 
-  output {
-    logs    = [otelcol.processor.batch.default.input]
-  }
+    output {
+        logs    = [otelcol.processor.batch.default.input]
+
+        // We define where to send the output of all ingested traces. In this case, to the OpenTelemetry batch processor
+        // named 'default'.
+        traces = [
+            // Uncomment the next line to generate service graph metrics from the Alloy. By default this is generated
+            // by the Tempo component, so be sure to remove the relevant configuration in the `tempo/tempo.yaml` file.
+            //otelcol.connector.servicegraph.tracemetrics.input,
+
+            // Uncomment the next line to generate span metrics from the Alloy. By default this is generated
+            // by the Tempo component, so be sure to remove the relevant configuration in the `tempo/tempo.yaml` file.
+            //otelcol.connector.spanmetrics.tracemetrics.input,
+
+            // The following would be used for tail sampling only traces containing errors.
+            // Uncomment the following line, then comment out the line below it (the batch processor) to use
+            // tail sampling.
+            //otelcol.processor.tail_sampling.errors.input,
+
+            otelcol.processor.batch.default.input,
+
+            //otelcol.connector.spanlogs.autologging.input,
+        ]
+    }
 }
 
+// The OpenTelemetry batch processor collects trace spans until a batch size or timeout is met, before sending those
+// spans onto another target. This processor is labeled 'default'.
+// https://grafana.com/docs/agent/latest/flow/reference/components/otelcol.processor.batch
 otelcol.processor.batch "default" {
-  output {
-    logs    = [otelcol.exporter.otlphttp.default.input]
-  }
+    // Wait until we've received 1000 samples, up to a maximum of 2000.
+    send_batch_size = 1000
+    send_batch_max_size = 2000
+    // Or until 2 seconds have elapsed.
+    timeout = "2s"
+
+    // When the Alloy has enough batched data:
+    output {
+        // Send logs to the OpenTelemetry exporter named 'loki'.
+        logs   = [otelcol.exporter.otlphttp.loki.input]
+
+        // Send traces to the OpenTelemetry exporter named 'tempo'.
+        traces = [otelcol.exporter.otlp.tempo.input]
+        // Use otelcol.exporter.otlphttp.tempo_cloud.input for Grafana Cloud
+        // traces = [otelcol.exporter.otlphttp.tempo_cloud.input]
+    }
 }
 
-otelcol.exporter.otlphttp "default" {
-  client {
-    endpoint = "http://common_loki:3100/otlp"
-  }
+otelcol.exporter.otlphttp "loki" {
+    client {
+        // client.endpoint is used to construct the logs endpoint as follows: client.endpoint + "/v1/logs"
+        // So, logs_endpoint here would be "http://common_loki:3100/otlp/v1/logs"
+        // https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.otlphttp/#arguments
+        endpoint = "http://common_loki:3100/otlp"
+    }
+}
+
+// otelcol.exporter.otlp "loki" {
+//     client {
+//         // client.endpoint is used to construct the logs endpoint as follows: client.endpoint + "/v1/logs"
+//         // So, logs_endpoint here would be "http://common_loki:3100/otlp/v1/logs"
+//         // https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.otlphttp/#arguments
+//         endpoint = "http://common_loki:9095"
+//     }
+// }
+
+// otelcol.exporter.otlphttp "tempo_cloud" {
+//     client {
+//         // client.endpoint is used to construct the traces endpoint as follows: client.endpoint + "/v1/traces"
+//         // So, traces_endpoint here would be "http://common_tempo:3200/otlp/v1/traces"
+//         // https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.otlphttp/#arguments
+//         //endpoint = "http://common_tempo:3200/otlp"
+//         endpoint = json_path(local.file.endpoints.content, ".traces_cloud.url")[0]
+//         auth     = otelcol.auth.basic.grafana_cloud.handler
+//     }
+// }
+
+// otelcol.auth.basic "grafana_cloud" {
+// 	username = json_path(local.file.endpoints.content, ".traces_cloud.basicAuth.username")[0]
+// 	password = json_path(local.file.endpoints.content, ".traces_cloud.basicAuth.password")[0]
+// }
+
+// The OpenTelemetry exporter exports processed trace spans to another target that is listening for OTLP format traces.
+// A unique label, 'tempo', is added to uniquely identify this exporter.
+otelcol.exporter.otlp "tempo" {
+    // Define the client for exporting.
+    client {
+        // Authentication block.
+        auth = otelcol.auth.headers.tempo.handler
+
+        // Send to the locally running Tempo instance, on port 4317 (OTLP gRPC).
+        endpoint = json_path(local.file.endpoints.content, ".traces.url")[0]
+
+        // Configure TLS settings for communicating with the endpoint.
+        tls {
+            // The connection is insecure.
+            insecure = json_path(local.file.endpoints.content, ".traces.tls.insecure")[0]
+            // Do not verify TLS certificates when connecting.
+            insecure_skip_verify = json_path(local.file.endpoints.content, ".traces.tls.insecureSkipVerify")[0]
+        }
+    }
+}
+
+// The OpenTelemetry auth headers component is used to define the headers for the OTLP exporter. Note we don't
+// use basic auth here because the OTel spec. demands TLS enabled for basic auth. Using basic header auth
+// allow us to still wire up the basic auth credentials to the Tempo exporter even when they won't be required.
+otelcol.auth.headers "tempo" {
+    header {
+        key = "Authorization"
+        value = join(["Basic ", json_path(local.file.endpoints.content, ".traces.basicAuthToken")[0]], "")
+    }
 }

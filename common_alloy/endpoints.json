@@ -1,0 +1,38 @@
+{
+  "metrics": {
+    "url": "http://common_mimir:9009/api/v1/push",
+    "basicAuth": {
+      "username": "",
+      "password": ""
+    }
+  },
+  "logs": {
+    "url": "http://common_loki:3100/loki/api/v1/push",
+    "basicAuth": {
+      "username": "",
+      "password": ""
+    }
+  },
+  "traces": {
+    "url": "http://common_tempo:4317",
+    "basicAuthToken": "",
+    "tls": {
+      "insecure": true,
+      "insecureSkipVerify": true
+    }
+  },
+  "traces_cloud": {
+    "url": "https://otlp-gateway-prod-ap-south-1.grafana.net/otlp",
+    "basicAuth": {
+      "username": "<enter-username-here>",
+      "password": "<enter-password-here>"
+    }
+  },
+  "profiles": {
+    "url": "http://common_pyroscope:4040",
+    "basicAuth": {
+      "username": "",
+      "password": ""
+    }
+  }
+}

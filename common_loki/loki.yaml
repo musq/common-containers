@@ -9,7 +9,8 @@ auth_enabled: false
 
 # Configuration block for the Loki server.
 server:
-  http_listen_port: 3100  # Listen on port 3100 for all incoming traffic.
+  http_listen_port: 3100  # HTTP server listen port
+  grpc_listen_port: 9095  # gRPC server listen port
   log_level: info         # Set the log level to info.
 
 # The limits configuration block allows default global and per-tenant limits to
@@ -63,13 +64,13 @@ storage_config:
     active_index_directory: /loki/tsdb-shipper-active
     cache_location: /loki/tsdb-shipper-cache
 
+pattern_ingester:
+  enabled: true
+
 # The ruler configuration block to configure the ruler (for recording rules and alerts) in Loki.
 ruler:
   alertmanager_url: http://localhost:9093   # The URL of the Alertmanager to send alerts to. Again, this is a single
                                             # binary instance running on the same host, so it's localhost.
-
-pattern_ingester:
-  enabled: true
 
 # By default, Loki will send anonymous, but uniquely-identifiable usage and configuration
 # analytics to Grafana Labs. These statistics are sent to https://stats.grafana.org/

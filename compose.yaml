@@ -90,9 +90,11 @@ services:
     ports:
       - "11400:9000"
 
+  # The Loki service stores logs sent to it, and takes queries from Grafana
+  # to visualise those logs
   common_loki:
-    image: grafana/loki:latest
-    command: -config.file=/etc/loki/config.yaml
+    image: grafana/loki:3.3.2
+    command: ["-config.file=/etc/loki/loki.yaml"]
     healthcheck:
       # https://community.grafana.com/t/loki-healthcheck-in-docker-compose/117767/4
       test: wget --quiet --tries=1 --output-document=- http://localhost:3100/ready | grep -q -w ready || exit 1
@@ -103,14 +105,38 @@ services:
     ports:
       - "11215:3100"
     volumes:
-      - ./common_loki/config.yaml:/etc/loki/config.yaml
+      - ./common_loki/loki.yaml:/etc/loki/loki.yaml
       - ~/src/docker-volumes/common_loki/data:/loki
+
+  # The Tempo service stores traces sent to it by Grafana Alloy, and takes
+  # queries from Grafana to visualise those traces
+  common_tempo:
+    image: grafana/tempo:2.6.1
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    healthcheck:
+      # https://community.grafana.com/t/loki-healthcheck-in-docker-compose/117767/4
+      test: wget --quiet --tries=1 --output-document=- http://localhost:3200/ready | grep -q -w ready || exit 1
+      start_period: 5s
+      interval: 3s
+      timeout: 1s
+      retries: 20
+    ports:
+      - "11220:3200"
+    volumes:
+      - "./common_tempo/tempo.yaml:/etc/tempo/tempo.yaml"
 
   common_alloy:
     image: grafana/alloy:latest
-    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy/data /etc/alloy/config.alloy
+    command: [
+      "run",
+      "--server.http.listen-addr=0.0.0.0:12345",
+      "--storage.path=/var/lib/alloy/data",
+      "/etc/alloy/config.alloy",
+    ]
     depends_on:
       common_loki:
+        condition: service_healthy
+      common_tempo:
         condition: service_healthy
     healthcheck:
       # https://github.com/grafana/alloy/issues/477#issuecomment-2050541417
@@ -124,10 +150,11 @@ services:
       - "11212:4318" # HTTP
     volumes:
       - ./common_alloy/config.alloy:/etc/alloy/config.alloy
+      - ./common_alloy/endpoints.json:/etc/alloy/endpoints.json
       - ~/src/docker-volumes/common_alloy/data:/var/lib/alloy/data
 
   common_grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:11.4.0
     environment:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
       - GF_AUTH_ANONYMOUS_ENABLED=true
