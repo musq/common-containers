@@ -9,10 +9,6 @@ datasources:
   jsonData:
     derivedFields:
       - datasourceUid: tempo
-        name: traceId
-        matcherRegex: "^.*?traceI[d|D]=(\\w+).*$"
-        url: '$${__value.raw}'
-      - datasourceUid: tempo
         name: trace_id
         matcherType: "label"
         matcherRegex: "trace_id"
@@ -23,3 +19,10 @@ datasources:
   uid: tempo
   access: proxy
   url: http://common_tempo:3200
+  jsonData:
+    tracesToLogs:
+      datasourceUid: loki
+      filterByTraceID: false
+      spanEndTimeShift: "500ms"
+      spanStartTimeShift: "-500ms"
+      tags: ['dummy']
