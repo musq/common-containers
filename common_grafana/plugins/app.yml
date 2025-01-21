@@ -10,3 +10,8 @@ apps:
       isApiKeySet: true
     secureJsonData:
       apiKey: secret-key
+
+  - type: "grafana-exploretraces-app"
+    org_id: 1
+    org_name: "Grafana"
+    disabled: false
