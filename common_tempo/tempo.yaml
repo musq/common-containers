@@ -24,6 +24,17 @@ distributor:
           endpoint: "common_tempo:4317"
         http:   # on port 4318
           endpoint: "common_tempo:4318"
+          # WARN: By default tempo exposes the otlp route on "/v1/traces" instead
+          # of "/otlp/v1/traces". As a result it becomes inconsistent with Loki
+          # and Mimir, and we have to omit "/otlp" suffix from the
+          # otelcol.exporter.otlphttp.tempo.client.endpoint in config.alloy for
+          # it to work. So, here we prefix "/otlp" to the traces route, so we
+          # are able to keep "/otlp" suffix in
+          # otelcol.exporter.otlphttp.tempo.client.endpoint and keep things
+          # consistent
+          # https://github.com/grafana/tempo/issues/4590#issuecomment-2609985910
+          # https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.otlphttp/#arguments
+          traces_url_path: "/otlp/v1/traces"
 
 # The ingester receives data from the distributor and processes it into indices and blocks.
 ingester:

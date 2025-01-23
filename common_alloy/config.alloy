@@ -104,10 +104,10 @@ otelcol.exporter.otlphttp "mimir" {
 
 otelcol.exporter.otlphttp "tempo" {
     client {
-        // WARN: Actually tempo exposes the otlp route on "/v1/traces" instead of
-        // "/otlp/v1/traces", so traces_endpoint here would be "http://common_tempo:4318/v1/traces"
+        // client.endpoint is used to construct the traces endpoint as follows: client.endpoint + "/v1/traces"
+        // So, traces_endpoint here would be "http://common_tempo:4318/otlp/v1/traces"
         // https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.otlphttp/#arguments
-        endpoint = "http://common_tempo:4318"
+        endpoint = "http://common_tempo:4318/otlp"
     }
 }
 
