@@ -108,6 +108,24 @@ services:
       - ./common_loki/loki.yaml:/etc/loki/loki.yaml
       - ~/src/docker-volumes/common_loki/data:/loki
 
+  common_mimir:
+    # WARN: We are using mimir-alpine image to allow healthcheck via Busybox's wget.
+    # However mimir-alpine will be deprecated after 2.15 release, so ensure to upgrade later.
+    # https://github.com/grafana/mimir/issues/9034#issuecomment-2303087973
+    image: grafana/mimir-alpine:2.14.3
+    command: ["-config.file=/etc/mimir/mimir.yaml"]
+    healthcheck:
+      # https://community.grafana.com/t/loki-healthcheck-in-docker-compose/117767/4
+      test: wget --quiet --tries=1 --output-document=- http://localhost:9009/ready | grep -q -w ready || exit 1
+      start_period: 5s
+      interval: 3s
+      timeout: 1s
+      retries: 20
+    ports:
+      - "11220:9009"
+    volumes:
+      - "./common_mimir/mimir.yaml:/etc/mimir/mimir.yaml"
+
   # The Tempo service stores traces sent to it by Grafana Alloy, and takes
   # queries from Grafana to visualise those traces
   common_tempo:
@@ -121,7 +139,7 @@ services:
       timeout: 1s
       retries: 20
     ports:
-      - "11220:3200"
+      - "11225:3200"
     volumes:
       - "./common_tempo/tempo.yaml:/etc/tempo/tempo.yaml"
 
@@ -135,6 +153,8 @@ services:
     ]
     depends_on:
       common_loki:
+        condition: service_healthy
+      common_mimir:
         condition: service_healthy
       common_tempo:
         condition: service_healthy
@@ -161,6 +181,13 @@ services:
       - GF_AUTH_BASIC_ENABLED=false
       - GF_FEATURE_TOGGLES_ENABLE=accessControlOnCall
       - GF_INSTALL_PLUGINS=https://storage.googleapis.com/integration-artifacts/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip;grafana-lokiexplore-app, https://storage.googleapis.com/integration-artifacts/grafana-exploretraces-app/grafana-exploretraces-app-latest.zip;grafana-traces-app
+    depends_on:
+      common_loki:
+        condition: service_healthy
+      common_mimir:
+        condition: service_healthy
+      common_tempo:
+        condition: service_healthy
     healthcheck:
       # https://github.com/grafana/grafana/pull/27536
       test: wget --quiet --tries=1 --output-document=- http://localhost:3000/healthz | grep -q -w Ok || exit 1

@@ -14,6 +14,18 @@ datasources:
         matcherRegex: "trace_id"
         url: '$${__value.raw}'
 
+- name: Mimir
+  type: prometheus
+  uid: mimir
+  access: proxy
+  url: http://common_mimir:9009/prometheus
+  jsonData:
+    exemplarTraceIdDestinations:
+      - datasourceUid: tempo
+        name: trace_id
+    httpMethod: POST
+    timeInterval: "2s"
+
 - name: Tempo
   type: tempo
   uid: tempo
