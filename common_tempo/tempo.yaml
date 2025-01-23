@@ -18,8 +18,12 @@ distributor:
     # For a production deployment you should only enable the receivers you need!
     otlp:
       protocols:
-        http:   # on port 4318
+        # Use <container_name>:<port> instead of "0.0.0.0:<port>"
+        # https://grafana.com/docs/tempo/latest/release-notes/v2-7/#opentelemetry-collector-receiver-listens-on-localhost-by-default
         grpc:   # on port 4317
+          endpoint: "common_tempo:4317"
+        http:   # on port 4318
+          endpoint: "common_tempo:4318"
 
 # The ingester receives data from the distributor and processes it into indices and blocks.
 ingester:
@@ -92,6 +96,7 @@ metrics_generator:
     remote_write:
       - url: http://mimir:9009/api/v1/push  # URL of locally running Mimir instance.
         send_exemplars: true # Send exemplars along with their metrics.
+
   traces_storage:
     path: /tmp/tempo/generator/traces
 

@@ -65,7 +65,7 @@ otelcol.processor.batch "default" {
         logs   = [otelcol.exporter.otlphttp.loki.input]
 
         // Send traces to the OpenTelemetry exporter named 'tempo'.
-        traces = [otelcol.exporter.otlp.tempo.input]
+        traces = [otelcol.exporter.otlphttp.tempo.input]
         // Use otelcol.exporter.otlphttp.tempo_cloud.input for Grafana Cloud
         // traces = [otelcol.exporter.otlphttp.tempo_cloud.input]
     }
@@ -89,6 +89,19 @@ otelcol.exporter.otlphttp "loki" {
 //     }
 // }
 
+otelcol.exporter.otlphttp "tempo" {
+    client {
+        // client.endpoint is used to construct the traces endpoint as follows: client.endpoint + "/v1/traces"
+        // So, traces_endpoint here would be "http://common_tempo:3200/otlp/v1/traces"
+        // https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.otlphttp/#arguments
+        endpoint = "http://common_tempo:4318/otlp"
+    }
+    // WARN: Actually tempo exposes the otlp route on "/v1/traces" instead of
+    // "/otlp/v1/traces", so we are essentially overriding the "client.endpoint"
+    // config above with "traces_endpoint" here
+    traces_endpoint = "http://common_tempo:4318/v1/traces"
+}
+
 // otelcol.exporter.otlphttp "tempo_cloud" {
 //     client {
 //         // client.endpoint is used to construct the traces endpoint as follows: client.endpoint + "/v1/traces"
@@ -101,8 +114,8 @@ otelcol.exporter.otlphttp "loki" {
 // }
 
 // otelcol.auth.basic "grafana_cloud" {
-// 	username = json_path(local.file.endpoints.content, ".traces_cloud.basicAuth.username")[0]
-// 	password = json_path(local.file.endpoints.content, ".traces_cloud.basicAuth.password")[0]
+//     username = json_path(local.file.endpoints.content, ".traces_cloud.basicAuth.username")[0]
+//     password = json_path(local.file.endpoints.content, ".traces_cloud.basicAuth.password")[0]
 // }
 
 // The OpenTelemetry exporter exports processed trace spans to another target that is listening for OTLP format traces.
