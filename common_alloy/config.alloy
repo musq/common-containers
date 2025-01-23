@@ -91,15 +91,11 @@ otelcol.exporter.otlphttp "loki" {
 
 otelcol.exporter.otlphttp "tempo" {
     client {
-        // client.endpoint is used to construct the traces endpoint as follows: client.endpoint + "/v1/traces"
-        // So, traces_endpoint here would be "http://common_tempo:3200/otlp/v1/traces"
+        // WARN: Actually tempo exposes the otlp route on "/v1/traces" instead of
+        // "/otlp/v1/traces", so traces_endpoint here would be "http://common_tempo:4318/v1/traces"
         // https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.otlphttp/#arguments
-        endpoint = "http://common_tempo:4318/otlp"
+        endpoint = "http://common_tempo:4318"
     }
-    // WARN: Actually tempo exposes the otlp route on "/v1/traces" instead of
-    // "/otlp/v1/traces", so we are essentially overriding the "client.endpoint"
-    // config above with "traces_endpoint" here
-    traces_endpoint = "http://common_tempo:4318/v1/traces"
 }
 
 // otelcol.exporter.otlphttp "tempo_cloud" {
