@@ -23,7 +23,7 @@ services:
     ports:
       - "11310:5432"
     volumes:
-      - ./postgres/docker-entrypoint-initdb.d/1-create-meta-db.sh:/docker-entrypoint-initdb.d/1-create-meta-db.sh
+      - ./configs/postgres/docker-entrypoint-initdb.d/1-create-meta-db.sh:/docker-entrypoint-initdb.d/1-create-meta-db.sh
       - ~/src/comcon-volumes/postgres:/var/lib/postgresql/data
 
   zookeeper:
@@ -75,8 +75,8 @@ services:
       - "11420:11420"
       - "11424:11424"
     volumes:
-      - ./kafka/secrets/server.keystore.jks:/etc/kafka/secrets/server.keystore.jks
-      - ./kafka/secrets/server.keystore.password:/etc/kafka/secrets/server.keystore.password
+      - ./configs/kafka/secrets/server.keystore.jks:/etc/kafka/secrets/server.keystore.jks
+      - ./configs/kafka/secrets/server.keystore.password:/etc/kafka/secrets/server.keystore.password
       - ~/src/comcon-volumes/kafka/data:/var/lib/kafka/data
 
   kafdrop:
@@ -105,7 +105,7 @@ services:
     ports:
       - "11215:3100"
     volumes:
-      - ./loki/loki.yaml:/etc/loki/loki.yaml
+      - ./configs/loki/loki.yaml:/etc/loki/loki.yaml
       - ~/src/comcon-volumes/loki/data:/loki
 
   mimir:
@@ -124,7 +124,7 @@ services:
     ports:
       - "11220:9009"
     volumes:
-      - "./mimir/mimir.yaml:/etc/mimir/mimir.yaml"
+      - "./configs/mimir/mimir.yaml:/etc/mimir/mimir.yaml"
 
   # The Tempo service stores traces sent to it by Grafana Alloy, and takes
   # queries from Grafana to visualise those traces
@@ -141,7 +141,7 @@ services:
     ports:
       - "11225:3200"
     volumes:
-      - "./tempo/tempo.yaml:/etc/tempo/tempo.yaml"
+      - "./configs/tempo/tempo.yaml:/etc/tempo/tempo.yaml"
 
   alloy:
     image: grafana/alloy:latest
@@ -169,8 +169,8 @@ services:
       - "11211:4317" # gRPC
       - "11212:4318" # HTTP
     volumes:
-      - ./alloy/config.alloy:/etc/alloy/config.alloy
-      - ./alloy/endpoints.json:/etc/alloy/endpoints.json
+      - ./configs/alloy/config.alloy:/etc/alloy/config.alloy
+      - ./configs/alloy/endpoints.json:/etc/alloy/endpoints.json
       - ~/src/comcon-volumes/alloy/data:/var/lib/alloy/data
 
   grafana:
@@ -197,5 +197,5 @@ services:
     ports:
       - "11200:3000"
     volumes:
-      - ./grafana:/etc/grafana/provisioning
+      - ./configs/grafana:/etc/grafana/provisioning
       - ~/src/comcon-volumes/grafana/data:/var/lib/grafana

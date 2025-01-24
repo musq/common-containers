@@ -39,7 +39,7 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 TMP_DIR=$(mktemp -d)
-SECRETS_DIR="kafka/secrets"
+SECRETS_DIR="configs/kafka/secrets"
 KEYSTORE_PASSWORD=$(cat "$SECRETS_DIR/server.keystore.password")
 
 # How to create certificates with multiple Subject Alternative Names:
