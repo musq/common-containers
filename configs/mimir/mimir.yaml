@@ -18,18 +18,18 @@ blocks_storage:
   backend: filesystem
   # Directory in which to store synchronised TSDB index headers.
   bucket_store:
-    sync_dir: /tmp/mimir/tsdb-sync
+    sync_dir: /var/lib/mimir/tsdb-sync
   # Directory in which to store configuration for object storage.
   filesystem:
-    dir: /tmp/mimir/data/tsdb
+    dir: /var/lib/mimir/data/tsdb
   # Direction in which to store TSDB WAL data.
   tsdb:
-    dir: /tmp/mimir/tsdb
+    dir: /var/lib/mimir/tsdb
 
 # The compactor block configures the compactor responsible for compacting TSDB blocks.
 compactor:
   # Directory to temporarily store blocks underdoing compaction.
-  data_dir: /tmp/mimir/compactor
+  data_dir: /var/lib/mimir/compactor
   # The sharding ring type used to share the hashed ring for the compactor.
   sharding_ring:
     # Use memberlist backend store (the default).
@@ -66,7 +66,7 @@ ruler_storage:
   backend: filesystem
   filesystem:
     # The directory in which to store rules.
-    dir: /tmp/mimir/rules
+    dir: /var/lib/mimir/rules
 
 # The store gateway block configures gateway storage.
 store_gateway:

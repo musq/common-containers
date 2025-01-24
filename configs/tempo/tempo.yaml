@@ -58,10 +58,10 @@ storage:
       bloom_filter_false_positive: .05 # Bloom filter false positive rate.  lower values create larger filters but fewer false positives.
     # Write Ahead Log (WAL) configuration.
     wal:
-      path: /tmp/tempo/wal             # Directory to store the the WAL locally.
+      path: /var/lib/tempo/wal             # Directory to store the the WAL locally.
     # Local configuration for filesystem storage.
     local:
-      path: /tmp/tempo/blocks          # Directory to store the TSDB blocks.
+      path: /var/lib/tempo/blocks          # Directory to store the TSDB blocks.
     # Pool used for finding trace IDs.
     pool:
       max_workers: 100                 # Worker pool determines the number of parallel requests to the object store backend.
@@ -102,14 +102,14 @@ metrics_generator:
   # Configures where the store for metrics is located.
   storage:
     # WAL for metrics generation.
-    path: /tmp/tempo/generator/wal
+    path: /var/lib/tempo/generator/wal
     # Where to remote write metrics to.
     remote_write:
       - url: http://mimir:9009/api/v1/push  # URL of locally running Mimir instance.
         send_exemplars: true # Send exemplars along with their metrics.
 
   traces_storage:
-    path: /tmp/tempo/generator/traces
+    path: /var/lib/tempo/generator/traces
 
 # Global override configuration.
 overrides:

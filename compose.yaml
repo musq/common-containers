@@ -106,7 +106,7 @@ services:
       - "11215:3100"
     volumes:
       - ./configs/loki/loki.yaml:/etc/loki/loki.yaml
-      - ~/src/comcon-volumes/loki/data:/loki
+      - ~/src/comcon-volumes/loki:/loki
 
   mimir:
     # WARN: We are using mimir-alpine image to allow healthcheck via Busybox's wget.
@@ -125,6 +125,7 @@ services:
       - "11220:9009"
     volumes:
       - "./configs/mimir/mimir.yaml:/etc/mimir/mimir.yaml"
+      - ~/src/comcon-volumes/mimir:/var/lib/mimir
 
   # The Tempo service stores traces sent to it by Grafana Alloy, and takes
   # queries from Grafana to visualise those traces
@@ -142,6 +143,7 @@ services:
       - "11225:3200"
     volumes:
       - "./configs/tempo/tempo.yaml:/etc/tempo/tempo.yaml"
+      - ~/src/comcon-volumes/tempo:/var/lib/tempo
 
   alloy:
     image: grafana/alloy:latest
