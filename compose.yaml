@@ -1,5 +1,5 @@
 services:
-  common_postgres:
+  postgres:
     image: postgres:16
     # To login to "postgres" database from outside your container, make
     # sure you have psql command on your machine. Then run:
@@ -23,10 +23,10 @@ services:
     ports:
       - "11310:5432"
     volumes:
-      - ./common_postgres/docker-entrypoint-initdb.d/1-create-meta-db.sh:/docker-entrypoint-initdb.d/1-create-meta-db.sh
-      - ~/src/docker-volumes/common_postgres:/var/lib/postgresql/data
+      - ./postgres/docker-entrypoint-initdb.d/1-create-meta-db.sh:/docker-entrypoint-initdb.d/1-create-meta-db.sh
+      - ~/src/comcon-volumes/postgres:/var/lib/postgresql/data
 
-  common_zookeeper:
+  zookeeper:
     image: confluentinc/cp-zookeeper:7.7.2
     environment:
       - ZOOKEEPER_CLIENT_PORT=11410
@@ -38,10 +38,10 @@ services:
       timeout: 2s
       retries: 10
     volumes:
-      - ~/src/docker-volumes/common_zookeeper/data:/var/lib/zookeeper/data
-      - ~/src/docker-volumes/common_zookeeper/log:/var/lib/zookeeper/log
+      - ~/src/comcon-volumes/zookeeper/data:/var/lib/zookeeper/data
+      - ~/src/comcon-volumes/zookeeper/log:/var/lib/zookeeper/log
 
-  common-kafka:
+  kafka:
     # Use "localhost:11420" as bootstrap server when connecting from
     # outside the docker network.
     # References:
@@ -49,12 +49,12 @@ services:
     # - https://rmoff.net/2018/08/02/kafka-listeners-explained/ for details
     image: confluentinc/cp-kafka:7.7.2
     depends_on:
-      common_zookeeper:
+      zookeeper:
         condition: service_healthy
     environment:
       - KAFKA_BROKER_ID=1
-      - KAFKA_ZOOKEEPER_CONNECT=common_zookeeper:11410
-      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://common-kafka:9092,EXTERNAL://localhost:11420,INTERNAL_SSL://common-kafka:9094,EXTERNAL_SSL://localhost:11424
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:11410
+      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka:9092,EXTERNAL://localhost:11420,INTERNAL_SSL://kafka:9094,EXTERNAL_SSL://localhost:11424
       - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,INTERNAL_SSL:SSL,EXTERNAL_SSL:SSL
       - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
@@ -75,24 +75,24 @@ services:
       - "11420:11420"
       - "11424:11424"
     volumes:
-      - ./common-kafka/secrets/server.keystore.jks:/etc/kafka/secrets/server.keystore.jks
-      - ./common-kafka/secrets/server.keystore.password:/etc/kafka/secrets/server.keystore.password
-      - ~/src/docker-volumes/common-kafka/data:/var/lib/kafka/data
+      - ./kafka/secrets/server.keystore.jks:/etc/kafka/secrets/server.keystore.jks
+      - ./kafka/secrets/server.keystore.password:/etc/kafka/secrets/server.keystore.password
+      - ~/src/comcon-volumes/kafka/data:/var/lib/kafka/data
 
-  common_kafdrop:
+  kafdrop:
     # Webapp to monitor kafka. Visit localhost:11400.
     image: obsidiandynamics/kafdrop:latest
     depends_on:
-      common-kafka:
+      kafka:
         condition: service_healthy
     environment:
-      - KAFKA_BROKERCONNECT=common-kafka:9092
+      - KAFKA_BROKERCONNECT=kafka:9092
     ports:
       - "11400:9000"
 
   # The Loki service stores logs sent to it, and takes queries from Grafana
   # to visualise those logs
-  common_loki:
+  loki:
     image: grafana/loki:3.3.2
     command: ["-config.file=/etc/loki/loki.yaml"]
     healthcheck:
@@ -105,10 +105,10 @@ services:
     ports:
       - "11215:3100"
     volumes:
-      - ./common_loki/loki.yaml:/etc/loki/loki.yaml
-      - ~/src/docker-volumes/common_loki/data:/loki
+      - ./loki/loki.yaml:/etc/loki/loki.yaml
+      - ~/src/comcon-volumes/loki/data:/loki
 
-  common_mimir:
+  mimir:
     # WARN: We are using mimir-alpine image to allow healthcheck via Busybox's wget.
     # However mimir-alpine will be deprecated after 2.15 release, so ensure to upgrade later.
     # https://github.com/grafana/mimir/issues/9034#issuecomment-2303087973
@@ -124,11 +124,11 @@ services:
     ports:
       - "11220:9009"
     volumes:
-      - "./common_mimir/mimir.yaml:/etc/mimir/mimir.yaml"
+      - "./mimir/mimir.yaml:/etc/mimir/mimir.yaml"
 
   # The Tempo service stores traces sent to it by Grafana Alloy, and takes
   # queries from Grafana to visualise those traces
-  common_tempo:
+  tempo:
     image: grafana/tempo:2.6.1
     command: ["-config.file=/etc/tempo/tempo.yaml"]
     healthcheck:
@@ -141,9 +141,9 @@ services:
     ports:
       - "11225:3200"
     volumes:
-      - "./common_tempo/tempo.yaml:/etc/tempo/tempo.yaml"
+      - "./tempo/tempo.yaml:/etc/tempo/tempo.yaml"
 
-  common_alloy:
+  alloy:
     image: grafana/alloy:latest
     command: [
       "run",
@@ -152,11 +152,11 @@ services:
       "/etc/alloy/config.alloy",
     ]
     depends_on:
-      common_loki:
+      loki:
         condition: service_healthy
-      common_mimir:
+      mimir:
         condition: service_healthy
-      common_tempo:
+      tempo:
         condition: service_healthy
     healthcheck:
       # https://github.com/grafana/alloy/issues/477#issuecomment-2050541417
@@ -169,11 +169,11 @@ services:
       - "11211:4317" # gRPC
       - "11212:4318" # HTTP
     volumes:
-      - ./common_alloy/config.alloy:/etc/alloy/config.alloy
-      - ./common_alloy/endpoints.json:/etc/alloy/endpoints.json
-      - ~/src/docker-volumes/common_alloy/data:/var/lib/alloy/data
+      - ./alloy/config.alloy:/etc/alloy/config.alloy
+      - ./alloy/endpoints.json:/etc/alloy/endpoints.json
+      - ~/src/comcon-volumes/alloy/data:/var/lib/alloy/data
 
-  common_grafana:
+  grafana:
     image: grafana/grafana:11.4.0
     environment:
       - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
@@ -182,11 +182,11 @@ services:
       - GF_FEATURE_TOGGLES_ENABLE=accessControlOnCall
       - GF_INSTALL_PLUGINS=https://storage.googleapis.com/integration-artifacts/grafana-lokiexplore-app/grafana-lokiexplore-app-latest.zip;grafana-lokiexplore-app, https://storage.googleapis.com/integration-artifacts/grafana-exploretraces-app/grafana-exploretraces-app-latest.zip;grafana-traces-app
     depends_on:
-      common_loki:
+      loki:
         condition: service_healthy
-      common_mimir:
+      mimir:
         condition: service_healthy
-      common_tempo:
+      tempo:
         condition: service_healthy
     healthcheck:
       # https://github.com/grafana/grafana/pull/27536
@@ -197,5 +197,5 @@ services:
     ports:
       - "11200:3000"
     volumes:
-      - ./common_grafana:/etc/grafana/provisioning
-      - ~/src/docker-volumes/common_grafana/data:/var/lib/grafana
+      - ./grafana:/etc/grafana/provisioning
+      - ~/src/comcon-volumes/grafana/data:/var/lib/grafana

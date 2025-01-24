@@ -5,7 +5,7 @@ datasources:
   type: loki
   uid: loki
   access: proxy
-  url: http://common_loki:3100
+  url: http://loki:3100
   jsonData:
     derivedFields:
       - datasourceUid: tempo
@@ -18,7 +18,7 @@ datasources:
   type: prometheus
   uid: mimir
   access: proxy
-  url: http://common_mimir:9009/prometheus
+  url: http://mimir:9009/prometheus
   jsonData:
     exemplarTraceIdDestinations:
       - datasourceUid: tempo
@@ -30,7 +30,7 @@ datasources:
   type: tempo
   uid: tempo
   access: proxy
-  url: http://common_tempo:3200
+  url: http://tempo:3200
   jsonData:
     tracesToLogs:
       datasourceUid: loki

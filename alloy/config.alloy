@@ -78,45 +78,45 @@ otelcol.processor.batch "default" {
 otelcol.exporter.otlphttp "loki" {
     client {
         // client.endpoint is used to construct the logs endpoint as follows: client.endpoint + "/v1/logs"
-        // So, logs_endpoint here would be "http://common_loki:3100/otlp/v1/logs"
+        // So, logs_endpoint here would be "http://loki:3100/otlp/v1/logs"
         // https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.otlphttp/#arguments
-        endpoint = "http://common_loki:3100/otlp"
+        endpoint = "http://loki:3100/otlp"
     }
 }
 
 // otelcol.exporter.otlp "loki" {
 //     client {
 //         // client.endpoint is used to construct the logs endpoint as follows: client.endpoint + "/v1/logs"
-//         // So, logs_endpoint here would be "http://common_loki:3100/otlp/v1/logs"
+//         // So, logs_endpoint here would be "http://loki:3100/otlp/v1/logs"
 //         // https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.otlphttp/#arguments
-//         endpoint = "http://common_loki:9095"
+//         endpoint = "http://loki:9095"
 //     }
 // }
 
 otelcol.exporter.otlphttp "mimir" {
     client {
         // client.endpoint is used to construct the metrics endpoint as follows: client.endpoint + "/v1/metrics"
-        // So, metrics_endpoint here would be "http://common_mimir:9009/otlp/v1/metrics"
+        // So, metrics_endpoint here would be "http://mimir:9009/otlp/v1/metrics"
         // https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.otlphttp/#arguments
-        endpoint = "http://common_mimir:9009/otlp"
+        endpoint = "http://mimir:9009/otlp"
     }
 }
 
 otelcol.exporter.otlphttp "tempo" {
     client {
         // client.endpoint is used to construct the traces endpoint as follows: client.endpoint + "/v1/traces"
-        // So, traces_endpoint here would be "http://common_tempo:4318/otlp/v1/traces"
+        // So, traces_endpoint here would be "http://tempo:4318/otlp/v1/traces"
         // https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.otlphttp/#arguments
-        endpoint = "http://common_tempo:4318/otlp"
+        endpoint = "http://tempo:4318/otlp"
     }
 }
 
 // otelcol.exporter.otlphttp "tempo_cloud" {
 //     client {
 //         // client.endpoint is used to construct the traces endpoint as follows: client.endpoint + "/v1/traces"
-//         // So, traces_endpoint here would be "http://common_tempo:3200/otlp/v1/traces"
+//         // So, traces_endpoint here would be "http://tempo:3200/otlp/v1/traces"
 //         // https://grafana.com/docs/alloy/latest/reference/components/otelcol/otelcol.exporter.otlphttp/#arguments
-//         //endpoint = "http://common_tempo:3200/otlp"
+//         //endpoint = "http://tempo:3200/otlp"
 //         endpoint = json_path(local.file.endpoints.content, ".traces_cloud.url")[0]
 //         auth     = otelcol.auth.basic.grafana_cloud.handler
 //     }

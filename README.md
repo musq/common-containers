@@ -1,15 +1,15 @@
-# Common Containers
+# ComCon - Common Containers
 
 A set of containers that are usually needed during software development.
 
 ## Clone
 
 ```sh
-# Clone common-containers
-git clone --recurse-submodules git@github.com:musq/common-containers.git
+# Clone comcon
+git clone --recurse-submodules git@github.com:musq/comcon.git
 
 # Go inside
-cd common-containers
+cd comcon
 
 # Update all related repos
 git submodule foreach 'git fetch && git rebase origin/main main'

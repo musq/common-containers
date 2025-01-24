@@ -1,20 +1,20 @@
 {
   "metrics": {
-    "url": "http://common_mimir:9009/api/v1/push",
+    "url": "http://mimir:9009/api/v1/push",
     "basicAuth": {
       "username": "",
       "password": ""
     }
   },
   "logs": {
-    "url": "http://common_loki:3100/loki/api/v1/push",
+    "url": "http://loki:3100/loki/api/v1/push",
     "basicAuth": {
       "username": "",
       "password": ""
     }
   },
   "traces": {
-    "url": "http://common_tempo:4317",
+    "url": "http://tempo:4317",
     "basicAuthToken": "",
     "tls": {
       "insecure": true,
@@ -29,7 +29,7 @@
     }
   },
   "profiles": {
-    "url": "http://common_pyroscope:4040",
+    "url": "http://pyroscope:4040",
     "basicAuth": {
       "username": "",
       "password": ""

@@ -39,7 +39,7 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 TMP_DIR=$(mktemp -d)
-SECRETS_DIR="common-kafka/secrets"
+SECRETS_DIR="kafka/secrets"
 KEYSTORE_PASSWORD=$(cat "$SECRETS_DIR/server.keystore.password")
 
 # How to create certificates with multiple Subject Alternative Names:
@@ -55,7 +55,7 @@ subjectAltName = @alt_names
 
 [alt_names]
 DNS.1 = localhost
-DNS.2 = common-kafka
+DNS.2 = kafka
 EOF
 
 if [ -e "$SECRETS_DIR/server.keystore.jks" ]; then
@@ -66,7 +66,7 @@ fi
 printf "> Generating SSL certificate and key for our kafka broker:\n\n"
 keytool -genkey \
   -keystore "$SECRETS_DIR/server.keystore.jks" \
-  -alias common-kafka \
+  -alias kafka \
   -storepass "$KEYSTORE_PASSWORD" \
   -validity 365 \
   -keyalg RSA \
@@ -75,7 +75,7 @@ keytool -genkey \
 printf "> Exporting CSR (certificate signing request) from keystore:\n\n"
 keytool -certreq -file "$TMP_DIR/cert-csr" \
   -keystore "$SECRETS_DIR/server.keystore.jks" \
-  -alias common-kafka \
+  -alias kafka \
   -storepass "$KEYSTORE_PASSWORD"
 
 printf "> Signing CSR with the mkcert's CA:\n\n"
@@ -98,7 +98,7 @@ keytool -import -file "$MKCERT_CACERT_PATH" \
 printf "> Importing signed certificate into the keystore:\n\n"
 keytool -import -file "$TMP_DIR/cert-signed" \
   -keystore "$SECRETS_DIR/server.keystore.jks" \
-  -alias common-kafka \
+  -alias kafka \
   -storepass "$KEYSTORE_PASSWORD"
 
 printf "\n\n\n\n\n\n"

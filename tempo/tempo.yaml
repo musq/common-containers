@@ -21,9 +21,9 @@ distributor:
         # Use <container_name>:<port> instead of "0.0.0.0:<port>"
         # https://grafana.com/docs/tempo/latest/release-notes/v2-7/#opentelemetry-collector-receiver-listens-on-localhost-by-default
         grpc:   # on port 4317
-          endpoint: "common_tempo:4317"
+          endpoint: "tempo:4317"
         http:   # on port 4318
-          endpoint: "common_tempo:4318"
+          endpoint: "tempo:4318"
           # WARN: By default tempo exposes the otlp route on "/v1/traces" instead
           # of "/otlp/v1/traces". As a result it becomes inconsistent with Loki
           # and Mimir, and we have to omit "/otlp" suffix from the

@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-# Script to create Meta DB when starting common_postgres for the first time
+# Script to create Meta DB when starting postgres for the first time
 # Author: Ashish Ranjan
 
 # ======================================================================
