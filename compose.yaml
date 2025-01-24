@@ -29,10 +29,10 @@ services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.7.2
     environment:
-      - ZOOKEEPER_CLIENT_PORT=11410
+      - ZOOKEEPER_CLIENT_PORT=11405
     healthcheck:
       # https://gabrielschenker.com/index.php/2019/10/01/docker-compose-health-checks/
-      test: nc -z localhost 11410 || exit -1
+      test: nc -z localhost 11405 || exit -1
       start_period: 15s
       interval: 3s
       timeout: 2s
@@ -42,7 +42,7 @@ services:
       - ~/src/comcon-volumes/zookeeper/log:/var/lib/zookeeper/log
 
   kafka:
-    # Use "localhost:11420" as bootstrap server when connecting from
+    # Use "localhost:11412" as bootstrap server when connecting from
     # outside the docker network.
     # References:
     # - https://gist.github.com/rmoff/fb7c39cc189fc6082a5fbd390ec92b3d
@@ -53,8 +53,8 @@ services:
         condition: service_healthy
     environment:
       - KAFKA_BROKER_ID=1
-      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:11410
-      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka:9092,EXTERNAL://localhost:11420,INTERNAL_SSL://kafka:9094,EXTERNAL_SSL://localhost:11424
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:11405
+      - KAFKA_ADVERTISED_LISTENERS=INTERNAL://kafka:9092,EXTERNAL://localhost:11412,INTERNAL_SSL://kafka:9094,EXTERNAL_SSL://localhost:11414
       - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,INTERNAL_SSL:SSL,EXTERNAL_SSL:SSL
       - KAFKA_INTER_BROKER_LISTENER_NAME=INTERNAL
       - KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR=1
@@ -72,8 +72,8 @@ services:
       timeout: 2s
       retries: 10
     ports:
-      - "11420:11420"
-      - "11424:11424"
+      - "11412:11412"
+      - "11414:11414"
     volumes:
       - ./configs/kafka/secrets/server.keystore.jks:/etc/kafka/secrets/server.keystore.jks
       - ./configs/kafka/secrets/server.keystore.password:/etc/kafka/secrets/server.keystore.password
@@ -146,6 +146,7 @@ services:
       - ~/src/comcon-volumes/tempo:/var/lib/tempo
 
   alloy:
+    # NOTE: Reload alloy on making any config changes: curl localhost:11210/-/reload
     image: grafana/alloy:latest
     command: [
       "run",
