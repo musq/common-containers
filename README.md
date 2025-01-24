@@ -5,6 +5,10 @@ A set of containers that are usually needed during software development.
 ## Clone
 
 ```sh
+# Create ~/src directory and enter it
+# This is important because the container volumes are going to reside in ~/src/comcon-volumes/
+mkdir -p ~/src && cd ~/src
+
 # Clone comcon
 git clone --recurse-submodules git@github.com:musq/comcon.git
 
