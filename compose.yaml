@@ -26,6 +26,34 @@ services:
       - ./configs/postgres/docker-entrypoint-initdb.d/1-create-meta-db.sh:/docker-entrypoint-initdb.d/1-create-meta-db.sh
       - ~/src/comcon-volumes/postgres:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7
+    # Connect via TLS:
+    # > docker exec -ti comcon-redis-1 bash
+    # > redis-cli -h localhost -p 6380 --tls --cert /run/redis.cert --key /run/redis.key --cacert /run/certifi_plus_mkcert_cacert.pem
+    command: [
+      "redis-server",
+      "--port 6379",
+      "--tls-port 6380",
+      "--tls-cert-file /run/redis.cert",
+      "--tls-key-file /run/redis.key",
+      "--tls-ca-cert-file /run/certifi_plus_mkcert_cacert.pem",
+    ]
+    healthcheck:
+      # https://stackoverflow.com/a/71504657
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+    ports:
+      - "11320:6379" # No TLS port
+      - "11321:6380" # TLS port
+    volumes:
+      - ~/src/comcon-volumes/redis:/data
+      - ./configs/redis/secrets/redis.cert:/run/redis.cert
+      - ./configs/redis/secrets/redis.key:/run/redis.key
+      - ${CERTIFI_PLUS_MKCERT_CACERT_PATH}:/run/certifi_plus_mkcert_cacert.pem
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.7.2
     environment:
