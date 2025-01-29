@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-# Script to generate SSL certificates for Redis to use TLS
+# Script to generate SSL certificates for Valkey to use TLS
 # Author: Ashish Ranjan
 # License: AGPL-3.0-or-later
 
@@ -8,7 +8,7 @@
 
 # Usage:
 # > Go to the root of the repo
-# > Run ./bin/create_redis_tls_certificates.sh
+# > Run ./bin/create_valkey_tls_certificates.sh
 
 # ======================================================================
 
@@ -36,7 +36,7 @@ fi
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 TMP_DIR=$(mktemp -d)
-SECRETS_DIR="configs/redis/secrets"
+SECRETS_DIR="configs/valkey/secrets"
 
 mkdir -p $SECRETS_DIR
 
@@ -44,7 +44,7 @@ mkdir -p $SECRETS_DIR
 # https://www.golinuxcloud.com/openssl-subject-alternative-name/
 
 # Create an openssl config file
-cat >"$TMP_DIR/openssl_redis.cnf" <<EOF
+cat >"$TMP_DIR/openssl_valkey.cnf" <<EOF
 [req]
 req_extensions = req_ext
 
@@ -53,17 +53,18 @@ subjectAltName = @alt_names
 
 [alt_names]
 DNS.1 = localhost
-DNS.2 = redis
+DNS.2 = valkey
+DNS.3 = redis
 EOF
 
-printf "> Generating TLS private key for Redis:\n\n"
-openssl genpkey -algorithm ED25519 -out "$SECRETS_DIR/redis.key"
+printf "> Generating TLS private key for Valkey:\n\n"
+openssl genpkey -algorithm ED25519 -out "$SECRETS_DIR/valkey.key"
 
-printf "> Generating CSR (certificate signing request) for Redis:\n\n"
+printf "> Generating CSR (certificate signing request) for Valkey:\n\n"
 openssl req \
   -new \
-  -key "$SECRETS_DIR/redis.key" \
-  -out "$TMP_DIR/redis.csr" \
+  -key "$SECRETS_DIR/valkey.key" \
+  -out "$TMP_DIR/valkey.csr" \
   -subj "/CN=localhost/OU=Engineering/O=YetAnotherIT/L=Bangalore/ST=Karnataka/C=IN"
 
 printf "> Signing CSR with the mkcert's CA:\n\n"
@@ -71,12 +72,12 @@ openssl x509 -req \
   -CAcreateserial \
   -CA "$MKCERT_CACERT_PATH" \
   -CAkey "$MKCERT_CAKEY_PATH" \
-  -in "$TMP_DIR/redis.csr" \
-  -out "$SECRETS_DIR/redis.cert" \
+  -in "$TMP_DIR/valkey.csr" \
+  -out "$SECRETS_DIR/valkey.cert" \
   -days 365 \
   -sha256 \
-  -extensions req_ext -extfile "$TMP_DIR/openssl_redis.cnf"
+  -extensions req_ext -extfile "$TMP_DIR/openssl_valkey.cnf"
 
 printf "\n\n\n\n\n\n"
-printf "> Please verify the contents of generated certificates for Redis:\n\n"
-openssl x509 -text -noout -in "$SECRETS_DIR/redis.cert"
+printf "> Please verify the contents of generated certificates for Valkey:\n\n"
+openssl x509 -text -noout -in "$SECRETS_DIR/valkey.cert"

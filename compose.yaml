@@ -26,22 +26,25 @@ services:
       - ./configs/postgres/docker-entrypoint-initdb.d/1-create-meta-db.sh:/docker-entrypoint-initdb.d/1-create-meta-db.sh
       - ~/src/comcon-volumes/postgres:/var/lib/postgresql/data
 
-  redis:
-    image: redis:7
+  # Valkey is the BSD Licensed Redis replacement. Redis has changed its
+  # license, so it not open-source now, and AWS has moved on to support
+  # valkey now.
+  valkey:  
+    image: valkey/valkey:7
     # Connect via TLS:
-    # > docker exec -ti comcon-redis-1 bash
-    # > redis-cli -h localhost -p 6380 --tls --cert /run/redis.cert --key /run/redis.key --cacert /run/certifi_plus_mkcert_cacert.pem
+    # > docker exec -ti comcon-valkey-1 bash
+    # > valkey-cli -h localhost -p 6380 --tls --cert /run/valkey.cert --key /run/valkey.key --cacert /run/certifi_plus_mkcert_cacert.pem
     command: [
-      "redis-server",
+      "valkey-server",
       "--port 6379",
       "--tls-port 6380",
-      "--tls-cert-file /run/redis.cert",
-      "--tls-key-file /run/redis.key",
+      "--tls-cert-file /run/valkey.cert",
+      "--tls-key-file /run/valkey.key",
       "--tls-ca-cert-file /run/certifi_plus_mkcert_cacert.pem",
     ]
     healthcheck:
       # https://stackoverflow.com/a/71504657
-      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      test: ["CMD-SHELL", "valkey-cli ping | grep PONG"]
       interval: 3s
       timeout: 3s
       retries: 5
@@ -49,9 +52,9 @@ services:
       - "11320:6379" # No TLS port
       - "11321:6380" # TLS port
     volumes:
-      - ~/src/comcon-volumes/redis:/data
-      - ./configs/redis/secrets/redis.cert:/run/redis.cert
-      - ./configs/redis/secrets/redis.key:/run/redis.key
+      - ~/src/comcon-volumes/valkey:/data
+      - ./configs/valkey/secrets/valkey.cert:/run/valkey.cert
+      - ./configs/valkey/secrets/valkey.key:/run/valkey.key
       - ${CERTIFI_PLUS_MKCERT_CACERT_PATH}:/run/certifi_plus_mkcert_cacert.pem
 
   zookeeper:
