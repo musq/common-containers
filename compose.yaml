@@ -1,10 +1,13 @@
 services:
   postgres:
     image: postgres:16
-    # To login to "postgres" database from outside your container, make
-    # sure you have psql command on your machine. Then run:
-    # > psql -h localhost -U postgres
-    # Use "postgres" when prompted for password
+    # - To login to "postgres" database from outside your container, make
+    #   sure you have psql command on your machine. Then run:
+    #   > psql -U postgres -h localhost
+    #   # Enter "postgres" when prompted for password
+    # - To login to "postgres" database using a READ ONLY user:
+    #   > psql -U readonlyuser -d postgres -h localhost
+    #   # Enter "readonlyuser" when prompted for password
     environment:
       POSTGRES_PASSWORD: postgres
     healthcheck:
@@ -23,7 +26,7 @@ services:
     ports:
       - "11310:5432"
     volumes:
-      - ./configs/postgres/docker-entrypoint-initdb.d/1-create-meta-db.sh:/docker-entrypoint-initdb.d/1-create-meta-db.sh
+      - ./configs/postgres/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
       - ~/src/comcon-volumes/postgres:/var/lib/postgresql/data
 
   # Valkey is the BSD Licensed Redis replacement. Redis has changed its

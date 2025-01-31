@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
-# Script to create Meta DB when starting postgres for the first time
+# Script to create a READ ONLY user with access to everything.
+# This script gets executed only once, when starting postgres for the first time.
 # Author: Ashish Ranjan
 
 # ======================================================================
@@ -13,12 +14,8 @@ IFS=$(printf '\n\t')
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-META_DB="meta"
-
 psql --variable ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" \
   <<-EOSQL
-    CREATE DATABASE "$META_DB" WITH
-        ENCODING='UTF8'
-        LC_COLLATE='en_US.utf8'
-        LC_CTYPE='en_US.utf8';
+    CREATE ROLE readonlyuser WITH LOGIN PASSWORD 'readonlyuser';
+    GRANT pg_read_all_data TO readonlyuser;
 EOSQL
