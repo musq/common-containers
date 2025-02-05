@@ -129,6 +129,46 @@ services:
     ports:
       - "11400:9000"
 
+  opensearch:
+    image: opensearchproject/opensearch:2.17.1
+    environment:
+      - cluster.name=opensearch-cluster
+      - node.name=opensearch
+      # Along with the memlock settings below, disable swapping
+      - bootstrap.memory_lock=true
+      # Minimum and maximum Java heap size, recommend setting both to
+      # 50% of system RAM
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+      # Disable execution of install_demo_configuration.sh bundled with
+      # security plugin, which installs demo certificates and security
+      # configurations to OpenSearch
+      - "DISABLE_INSTALL_DEMO_CONFIG=true"
+      # Disable security plugin entirely in OpenSearch by setting
+      # plugins.security.disabled: true in opensearch.yml
+      - "DISABLE_SECURITY_PLUGIN=true"
+      # Disable bootstrap checks that are enabled when network.host is
+      # set to a non-loopback address
+      - "discovery.type=single-node"
+    healthcheck:
+      test: curl -s localhost:9200/_cluster/health | grep -q -w '"status":"green"'
+      interval: 3s
+      timeout: 1s
+      retries: 10
+    ports:
+      - "11502:9200"
+      - "11506:9600"  # required for Performance Analyzer
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        # Maximum number of open files for the OpenSearch user, set to
+        # at least 65536 on modern systems
+        soft: 65536
+        hard: 65536
+    volumes:
+      - ~/src/comcon-volumes/opensearch/data:/usr/share/opensearch/data
+
   # The Loki service stores logs sent to it, and takes queries from Grafana
   # to visualise those logs
   loki:
